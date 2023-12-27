@@ -291,15 +291,19 @@ function Library:MouseIsOverOpenedFrame()
 end;
 
 function Library:isHolding(instance)
+	local lastClickTime = 0
+	local timeToHold = 0.4
     if instance then
         local isTouching, isHolding = false, false;
         local inputConnection, inputEndedConnection, inputChangedConnection;
 
         inputConnection = InputService.InputBegan:Connect(function(input, gameProcessedEvent)
             if not gameProcessedEvent and input.UserInputType == Enum.UserInputType.Touch then
+            	local currentTime = tick()
+            	
                 local touchPosition, instancePosition, instanceSize = input.Position, instance.AbsolutePosition, instance.AbsoluteSize;
-                isTouching = touchPosition.X >= instancePosition.X and touchPosition.X <= instancePosition.X + instanceSize.X
-                            and touchPosition.Y >= instancePosition.Y and touchPosition.Y <= instancePosition.Y + instanceSize.Y;
+                isTouching = (touchPosition.X >= instancePosition.X and touchPosition.X <= instancePosition.X + instanceSize.X and touchPosition.Y >= instancePosition.Y and touchPosition.Y <= instancePosition.Y + instanceSize.Y);
+                lastClickTime = currentTime;
             end;
         end);
 
@@ -312,8 +316,7 @@ function Library:isHolding(instance)
         inputChangedConnection = InputService.InputChanged:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch and isTouching then
                 local touchPosition, instancePosition, instanceSize = input.Position, instance.AbsolutePosition, instance.AbsoluteSize;
-                isHolding = touchPosition.X >= instancePosition.X and touchPosition.X <= instancePosition.X + instanceSize.X
-                            and touchPosition.Y >= instancePosition.Y and touchPosition.Y <= instancePosition.Y + instanceSize.Y;
+                isHolding = (touchPosition.X >= instancePosition.X and touchPosition.X <= instancePosition.X + instanceSize.X and touchPosition.Y >= instancePosition.Y and touchPosition.Y <= instancePosition.Y + instanceSize.Y) and (currentTime - lastClickTime) > 0.3 and (currentTime - lastClickTime) <= doubleClickThreshold;
             end;
         end);
 
@@ -1446,7 +1449,7 @@ do
         	TextLabel.Text = TextLabel.Text .. text
         	
         	function textFunc:SetColor(Color)
-	            TextLabel.Color = Color;
+	            TextLabel.Color = Color or Color3.new(1,1,1);
 	            
 	        	if DoesWrap then
 	                local Y = select(2, Library:GetTextBounds(Text, Library.Font, 14, Vector2.new(TextLabel.AbsoluteSize.X, math.huge)));
@@ -3156,30 +3159,11 @@ function Library:CreateWindow(...)
         Parent = TabArea;
     });
 
-    local searchTab = Library:Create('TextBox', {
-        BackgroundColor3 = Library.MainColor;
-        BorderColor3 = Library.OutlineColor;
-        Position = UDim2.new(0, 8, 0, (8 + 21));
-        Size = UDim2.new(1, -16, 0, 21);
-        Font = Library.Font;
-        PlaceholderColor3 = Color3.fromRGB(190, 190, 190);
-        PlaceholderText = 'Search functions here';
-
-        Text = '';
-        TextColor3 = Library.FontColor;
-        TextSize = 14;
-        TextStrokeTransparency = 0;
-        TextXAlignment = Enum.TextXAlignment.Left;
-
-        ZIndex = 7;
-        Parent = MainSectionInner;
-    });
-
     local TabContainer = Library:Create('Frame', {
         BackgroundColor3 = Library.MainColor;
         BorderColor3 = Library.OutlineColor;
-        Position = UDim2.new(0, 8, 0, (30 + 21));
-        Size = UDim2.new(1, -16, 1, ((-38) + -(21)));
+        Position = UDim2.new(0, 8, 0, 30;
+        Size = UDim2.new(1, -16, 1, -38);
         ZIndex = 2;
         Parent = MainSectionInner;
     });
@@ -3287,36 +3271,6 @@ function Library:CreateWindow(...)
             HorizontalAlignment = Enum.HorizontalAlignment.Center;
             Parent = RightSide;
         });
-
-		local function searchElements()
-		    local searchTerm = searchTab.Text:lower();
-		    for _, elements in pairs(LeftSide:GetChildren()) do
-		    	if searchTerm ~= "" or searchTerm ~= nil then
-			    	if string.find(elements.Text:lower(), searchTerm) then
-			    		elements.Visible = true;
-			    	else
-			    		elements.Visible = false;
-			    	end;
-			    else
-			    	local indx, allElements = next(LeftSide:GetChildren());
-			    	allElements.Visible = true;
-			    end;
-		    end;
-		    for _, elements in pairs(RightSide:GetChildren()) do
-		    	if searchTerm ~= "" or searchTerm ~= nil then
-			    	if string.find(elements.Text:lower(), searchTerm) then
-			    		elements.Visible = true;
-			    	else
-			    		elements.Visible = false;
-			    	end;
-			    else
-			    	local indx, allElements = next(RightSide:GetChildren());
-			    	allElements.Visible = true;
-			    end;
-		    end;
-		end;
-
-		searchTab:GetPropertyChangedSignal("Text"):Connect(searchElements);
 
         for _, Side in next, { LeftSide, RightSide } do
             Side:WaitForChild('UIListLayout'):GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
